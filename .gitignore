@@ -22,6 +22,8 @@
 *.tcl
 *~
 *sopc_*
+*.qpf
+*.qsf
 # *.sdc # I want those timing files
 
 # ignore Quartus II generated folders

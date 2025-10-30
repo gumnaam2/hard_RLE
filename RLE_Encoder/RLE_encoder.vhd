@@ -42,15 +42,15 @@ constant zigzag_order : zigzag_t := (
 
 type rle_t is array (0 to 63) of std_logic_vector(15 downto 0);
 signal rle_buffer : rle_t;
-signal x : std_logic;
+
 type fsm_state is (feeding, traversing, returning);
 signal state: fsm_state := feeding;
 
-signal n_inp, n_out, n_trav : integer range 0 to 64 := 0;
+signal n_inp, n_out, n_trav : integer range 0 to 64 := 0; --counters
 
 signal reduced_length_reg, reduced_length_reg_D: integer range 0 to 64 := 0;
 
-signal addr_reg, addr_reg_D, curr_char_n, curr_char_n_D : integer;
+signal curr_char_n, curr_char_n_D : integer;
 signal curr_char_reg, curr_char_reg_D : std_logic_vector(7 downto 0);
 signal mem_write_addr, RLE_write_addr : integer;
 signal mem_write_data : std_logic_vector(7 downto 0);
@@ -58,29 +58,34 @@ signal RLE_write_data : std_logic_vector(15 downto 0);
 
 begin
 
-state_set: process(clk, reset)
+state_set: process(clk)
 begin
-if reset = '1' then
-	state <= feeding;
-elsif rising_edge(clk) then
---	if state = idle then
---		if start = '1' then
---			state <= feeding;
---		end if;
-	if state = feeding then
-		if n_inp = 63 and start = '1' then
-			state <= traversing;
-		end if;
-	elsif state = traversing then
-		if n_trav = 63 then
-			state <= returning;
-		else
-			state <= traversing;
-		end if;
-	elsif state = returning then
-		if n_out = 63 then
-			state <= feeding;
-		end if;
+if rising_edge(clk) then
+	if reset = '1' then
+		state <= feeding;
+	else
+		case state is
+			when feeding =>
+				if n_inp = 63 and start = '1' then
+					state <= traversing;
+				else
+					state <= feeding;
+				end if;
+			when traversing =>
+				if n_trav = 63 then
+					state <= returning;
+				else
+					state <= traversing;
+				end if;
+			when returning =>
+				if n_out = 63 then
+					state <= feeding;
+				else
+					state <= returning;
+				end if;
+			when others =>
+				state <= feeding;
+		end case;
 	end if;
 end if;
 end process;
@@ -106,11 +111,9 @@ end process;
 reg_proc: process(reset, clk)
 begin
 if reset = '1' then
-	addr_reg <= 0;
 	curr_char_reg <= (others => '0');
 	curr_char_n <= 0;
 elsif rising_edge(clk) then
-	addr_reg <= addr_reg_D;
 	curr_char_reg <= curr_char_reg_D;
 	curr_char_n <= curr_char_n_D;
 end if;
@@ -131,20 +134,7 @@ elsif rising_edge(clk) then
 end if;
 end process;
 
---mem_write: process(reset, clk)
---begin
---if reset = '1' then
---	mem <= (others => (others => '0'));
---elsif rising_edge(clk) then
---	if state = feeding then
---		mem(n_inp) <= data_in;
---		x <= '1';
---	end if;
---end if;
---end process;
---
-
-mem_set: process(reset, state, data_in, n_inp) --write to mem when inputting
+mem_set: process(reset, state, start, data_in, n_inp) --write to mem when inputting
 begin
 if reset = '1' then
 	mem_write_data <= (others => '0');
@@ -158,7 +148,7 @@ else
 end if;
 end process;
 
-RLE_load: process(reset, state, n_trav, mem, curr_char_reg, curr_char_n, addr_reg)
+RLE_load: process(reset, state, n_trav, mem, curr_char_reg, curr_char_n, reduced_length_reg)
 begin
 if reset = '1' then
 	RLE_write_addr <= 0;
@@ -167,7 +157,7 @@ if reset = '1' then
 	curr_char_n_D <= 0;
 	reduced_length_reg_D <= 0;
 elsif state = traversing then
-	report integer'image(n_trav) & " " & integer'image(to_integer(unsigned(mem(zigzag_order(n_trav)))));
+	--report integer'image(n_trav) & " " & integer'image(to_integer(unsigned(mem(zigzag_order(n_trav)))));
 	if mem(zigzag_order(n_trav)) = curr_char_reg then
 		RLE_write_addr <= reduced_length_reg - 1;
 		reduced_length_reg_D <= reduced_length_reg;
@@ -210,14 +200,12 @@ end process;
 
 reduced_length <= to_unsigned(reduced_length_reg, 8);
 
-done_set: process(state, n_trav, addr_reg)
+done_set: process(state, n_trav)
 begin
 if (state = returning) then
 	done <= '1';
---	reduced_length <= to_unsigned(addr_reg, 8);
 else
 	done <= '0';
---	reduced_length <= (others => '0');
 end if;
 end process;
 
