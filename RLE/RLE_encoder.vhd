@@ -101,9 +101,11 @@ elsif rising_edge(clk) then
 	elsif state = traversing then
 		n_trav <= n_trav + 1;
 		n_inp <= 0; n_out <= 0;
-	else
+	elsif state = returning then
 		n_out <= n_out + 1;
 		n_inp <= 0; n_trav <= 0;
+	else
+		n_out <= n_out; n_inp <= n_inp; n_trav <= n_trav;
 	end if;
 end if;
 end process;
