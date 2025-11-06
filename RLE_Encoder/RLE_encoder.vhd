@@ -78,11 +78,7 @@ if rising_edge(clk) then
 					state <= traversing;
 				end if;
 			when returning =>
-<<<<<<< HEAD
 				if n_out = reduced_length_reg-1 then
-=======
-				if n_out = reduced_length_reg then
->>>>>>> a0e57216e7868cb72b2dd79c23843b6dd907c6ad
 					state <= feeding;
 				else
 					state <= returning;
