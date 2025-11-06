@@ -4,7 +4,7 @@
 #------------------------------------------------------------
 
 # Create primary clock on clk port
-create_clock -name clk -period 100 -waveform {0 50} [get_ports clk]
+create_clock -name clk -period 20 -waveform {0 20} [get_ports clk]
 
 
 # Optional: specify input and output delays if known

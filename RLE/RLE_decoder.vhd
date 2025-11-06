@@ -80,7 +80,7 @@ if rising_edge(clk) then
 				end if;
 			when returning =>
 				if n_out = 63 then
-					state <= feeding;
+					state <= idle;
 				else
 					state <= returning;
 				end if;

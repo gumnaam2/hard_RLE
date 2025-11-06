@@ -102,9 +102,11 @@ elsif rising_edge(clk) then
 	elsif state = traversing then
 		n_trav <= n_trav + 1;
 		n_inp <= 0; n_out <= 0;
-	else
+	elsif state = returning then
 		n_out <= n_out + 1;
 		n_inp <= 0; n_trav <= 0;
+	else
+		n_out <= n_out; n_inp <= n_inp; n_trav <= n_trav;
 	end if;
 end if;
 end process;
@@ -157,7 +159,7 @@ if reset = '1' then
 	next_RLE_index <= 0;
 elsif state = traversing then
 	mem_write_addr <= zigzag_order(n_trav);
---	report integer'image(n_trav) & ", " & integer'image(zigzag_order(n_trav));
+	report integer'image(n_trav) & ", " & integer'image(zigzag_order(n_trav));
 	if curr_char_n < to_integer(unsigned(RLE_buffer(RLE_index)(15 downto 8))) then
 		mem_write_data <= RLE_buffer(RLE_index)(7 downto 0);
 		curr_char_n_D <= curr_char_n + 1;
